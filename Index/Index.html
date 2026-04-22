@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SecureAuth — Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #080c10;
+    --surface: #0d1117;
+    --border: #1c2a3a;
+    --accent: #00e5ff;
+    --accent2: #7b61ff;
+    --danger: #ff4757;
+    --success: #00e676;
+    --warning: #ffa726;
+    --text: #c9d1d9;
+    --text-dim: #58697a;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridPan 30s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes gridPan {
+    from { background-position: 0 0; }
+    to   { background-position: 40px 40px; }
+  }
+
+  /* Glowing orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: .18;
+    pointer-events: none;
+    animation: pulse 8s ease-in-out infinite alternate;
+  }
+  .orb-1 { width: 500px; height: 500px; background: var(--accent2); top: -150px; right: -100px; animation-delay: 0s; }
+  .orb-2 { width: 400px; height: 400px; background: var(--accent);  bottom: -100px; left: -80px;  animation-delay: -3s; }
+
+  @keyframes pulse {
+    from { opacity: .12; transform: scale(.9); }
+    to   { opacity: .22; transform: scale(1.1); }
+  }
+
+  /* Main card */
+  .card {
+    position: relative;
+    width: 440px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(0,229,255,.06), 0 24px 64px rgba(0,0,0,.6);
+    animation: slideUp .5s cubic-bezier(.22,1,.36,1) both;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-header {
+    padding: 32px 36px 24px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .shield {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+    font-size: 20px;
+  }
+
+  .card-title {
+    font-family: var(--sans);
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -.5px;
+  }
+
+  .card-subtitle {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 16px 36px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    padding: 10px 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color .2s, border-color .2s;
+  }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* Forms */
+  .panel { display: none; padding: 28px 36px 36px; }
+  .panel.active { display: block; animation: fadeIn .3s ease both; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .field { margin-bottom: 18px; }
+
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 7px;
+  }
+
+  input {
+    width: 100%;
+    padding: 11px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,229,255,.1);
+  }
+
+  input.error { border-color: var(--danger); }
+
+  .field-error {
+    font-size: 11px;
+    color: var(--danger);
+    margin-top: 5px;
+    display: none;
+  }
+
+  /* Password strength */
+  .strength-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .strength-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 2px;
+    transition: width .3s, background .3s;
+  }
+
+  /* Submit button */
+  .btn {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity .2s, transform .1s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn:hover { opacity: .9; }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .btn-spinner {
+    display: none;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+  /* Response box */
+  .response {
+    margin-top: 18px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.6;
+    display: none;
+    border: 1px solid;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .response.success { background: rgba(0,230,118,.06); border-color: rgba(0,230,118,.3); color: var(--success); }
+  .response.error   { background: rgba(255,71,87,.06);  border-color: rgba(255,71,87,.3);  color: var(--danger); }
+  .response.warn    { background: rgba(255,167,38,.06); border-color: rgba(255,167,38,.3); color: var(--warning); }
+
+  /* Security badges */
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 16px 36px;
+    border-top: 1px solid var(--border);
+  }
+
+  .badge {
+    font-size: 10px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .badge-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: .3; }
+  }
+
+  /* Rate limit indicator */
+  .rate-limit-info {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: right;
+    margin-top: 6px;
+  }
+
+  /* Token display */
+  .token-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 10px;
+    color: var(--accent);
+    word-break: break-all;
+    max-height: 80px;
+    overflow-y: auto;
+    margin-top: 10px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="shield">🔐</div>
+    <div class="card-title">SecureAuth</div>
+    <div class="card-subtitle">bcrypt · parameterised SQL · rate limiting · JWT</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('login')">Login</button>
+    <button class="tab" onclick="switchTab('register')">Register</button>
+  </div>
+
+  <!-- LOGIN PANEL -->
+  <div class="panel active" id="panel-login">
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="l-username" placeholder="your_username" autocomplete="username" />
+      <div class="field-error" id="l-username-err"></div>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="l-password" placeholder="••••••••" autocomplete="current-password" />
+      <div class="field-error" id="l-password-err"></div>
+    </div>
+    <div class="rate-limit-info">⚡ Max 5 attempts / 15 min per IP</div>
+    <button class="btn" id="login-btn" onclick="doLogin()">
+      Sign In
+      <span class="btn-spinner" id="login-spin"></span>
+    </button>
+    <div class="response" id="login-res"></div>
+    <div class="token-box" id="login-token"></div>
+  </div>
+
+  <!-- REGISTER PANEL -->
+  <div class="panel" id="panel-register">
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="r-username" placeholder="your_username" autocomplete="username" />
+      <div class="field-error" id="r-username-err"></div>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="r-email" placeholder="you@example.com" autocomplete="email" />
+      <div class="field-error" id="r-email-err"></div>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="r-password" placeholder="Min 8 chars, 1 uppercase, 1 number"
+             autocomplete="new-password" oninput="checkStrength(this.value)" />
+      <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+      <div class="field-error" id="r-password-err"></div>
+    </div>
+    <div class="rate-limit-info">⚡ Max 10 registrations / hr per IP</div>
+    <button class="btn" id="register-btn" onclick="doRegister()">
+      Create Account
+      <span class="btn-spinner" id="register-spin"></span>
+    </button>
+    <div class="response" id="register-res"></div>
+  </div>
+
+  <div class="badges">
+    <span class="badge"><span class="badge-dot"></span> bcrypt ×12 rounds</span>
+    <span class="badge"><span class="badge-dot"></span> Parameterised SQL</span>
+    <span class="badge"><span class="badge-dot"></span> Rate Limited</span>
+    <span class="badge"><span class="badge-dot"></span> Helmet CSP</span>
+    <span class="badge"><span class="badge-dot"></span> JWT HS256</span>
+  </div>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) =>
+    t.classList.toggle('active', ['login','register'][i] === tab));
+  document.querySelectorAll('.panel').forEach(p =>
+    p.classList.toggle('active', p.id === `panel-${tab}`));
+}
+
+function checkStrength(pw) {
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const fill = document.getElementById('strength-fill');
+  const colors = ['', '#ff4757', '#ffa726', '#00e5ff', '#00e676'];
+  fill.style.width = `${score * 25}%`;
+  fill.style.background = colors[score];
+}
+
+function setLoading(btnId, spinId, on) {
+  document.getElementById(btnId).disabled = on;
+  document.getElementById(spinId).style.display = on ? 'block' : 'none';
+}
+
+function showResult(id, type, msg) {
+  const el = document.getElementById(id);
+  el.className = `response ${type}`;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function doLogin() {
+  const username = document.getElementById('l-username').value.trim();
+  const password = document.getElementById('l-password').value;
+  if (!username || !password) {
+    return showResult('login-res', 'error', '⚠ Please fill in all fields.');
+  }
+  setLoading('login-btn', 'login-spin', true);
+  document.getElementById('login-res').style.display = 'none';
+  document.getElementById('login-token').style.display = 'none';
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (res.status === 200) {
+      showResult('login-res', 'success',
+        `✓ HTTP 200 — ${data.message}\nUser: ${data.user.username} <${data.user.email}>`);
+      const tb = document.getElementById('login-token');
+      tb.textContent = `JWT: ${data.token}`;
+      tb.style.display = 'block';
+    } else if (res.status === 429) {
+      showResult('login-res', 'warn', `⛔ HTTP 429 — ${data.error}`);
+    } else {
+      showResult('login-res', 'error', `✗ HTTP ${res.status} — ${data.error}`);
+    }
+  } catch (e) {
+    showResult('login-res', 'error', `✗ Network error: ${e.message}`);
+  } finally {
+    setLoading('login-btn', 'login-spin', false);
+  }
+}
+
+async function doRegister() {
+  const username = document.getElementById('r-username').value.trim();
+  const email    = document.getElementById('r-email').value.trim();
+  const password = document.getElementById('r-password').value;
+  if (!username || !email || !password) {
+    return showResult('register-res', 'error', '⚠ Please fill in all fields.');
+  }
+  setLoading('register-btn', 'register-spin', true);
+  document.getElementById('register-res').style.display = 'none';
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password }),
+    });
+    const data = await res.json();
+    if (res.status === 201) {
+      showResult('register-res', 'success', `✓ HTTP 201 — ${data.message}`);
+    } else if (res.status === 409) {
+      showResult('register-res', 'warn', `⚠ HTTP 409 — ${data.error}`);
+    } else if (res.status === 422) {
+      const msgs = data.errors.map(e => `• ${e.msg}`).join('\n');
+      showResult('register-res', 'error', `✗ HTTP 422 — Validation failed:\n${msgs}`);
+    } else if (res.status === 429) {
+      showResult('register-res', 'warn', `⛔ HTTP 429 — ${data.error}`);
+    } else {
+      showResult('register-res', 'error', `✗ HTTP ${res.status} — ${data.error || 'Unknown error'}`);
+    }
+  } catch (e) {
+    showResult('register-res', 'error', `✗ Network error: ${e.message}`);
+  } finally {
+    setLoading('register-btn', 'register-spin', false);
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const active = document.querySelector('.panel.active').id;
+    active === 'panel-login' ? doLogin() : doRegister();
+  }
+});
+</script>
+</body>
+</html>
